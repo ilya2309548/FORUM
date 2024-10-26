@@ -1,0 +1,30 @@
+# Папка с кэшем Poetry
+__pypackages__/
+
+# Папка с кэшем pip
+.pip/
+
+# Системные файлы и папки
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Папка для виртуального окружения
+venv/
+env/
+.env
+.venv/
+
+# Файлы конфигурации среды
+.envrc
+*.env
+
+# Файлы конфигурации IDE
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Системные файлы и папки
+.DS_Store
+Thumbs.db
