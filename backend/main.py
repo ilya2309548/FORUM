@@ -39,7 +39,7 @@ app = FastAPI()
 #     except OperationalError:
 #         return {"status": "Database connection failed"}
 
-#
+
 
 # with engine.connect() as connection:
 #     result = connection.execute(text("select now()"))
