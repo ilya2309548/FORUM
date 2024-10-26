@@ -1,0 +1,117 @@
+
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session, declarative_base, Mapped, mapped_column
+from sqlalchemy.exc import OperationalError
+from sqlalchemy import text, MetaData, Column, Table, Integer, String, ForeignKey, select, inspect
+from sql_app.database import engine
+
+# Подключаем уже созданный SessionLocal
+from sql_app.database import SessionLocal
+app = FastAPI()
+
+
+@app.get("/")
+def root():
+    return "hello"
+
+
+app = FastAPI()
+
+# Функция для получения сессии базы данных
+
+
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+
+# Эндпоинт для проверки подключения к базе данных
+
+
+# @app.get("/check_db_connection")
+# def check_db_connection(db: Session = Depends(get_db)):
+#     try:
+#         # Простой SQL-запрос для проверки подключения
+#         db.execute(text("SELECT 1"))
+#         return {"status": "Database connection is successful"}
+#     except OperationalError:
+#         return {"status": "Database connection failed"}
+
+#
+
+# with engine.connect() as connection:
+#     result = connection.execute(text("select now()"))
+#     print(result.all())
+#
+# metadata = MetaData()
+#
+# user_table = Table(
+#     "Users",
+#     metadata,
+#     Column("id",Integer,primary_key=True),
+#     Column("name", String),
+# )
+#
+# address_table = Table(
+#     "Address",
+#     metadata,
+#     Column("id", Integer, primary_key=True),
+#     Column("name", String),
+#     Column("user_id", ForeignKey('Users.id'))
+# )
+#
+# metadata.drop_all(engine)
+
+# Base = declarative_base()
+# class AbstractModel(Base):
+#     __abstract__ = True
+#     id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+#
+#
+# class UserModel(AbstractModel):
+#     __tablename__ = 'users'
+#     name: Mapped[str] = mapped_column()
+
+#
+# class ProductModel(AbstractModel):
+#     __tablename__ = 'products'
+#     name: Mapped[str] = mapped_column()
+#     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+#
+#
+# with Session(engine) as session:
+#     with session.begin():
+#         # Base.metadata.create_all(engine)
+#         user = UserModel(name="Ilya")
+#         session.add(user)
+#         session.flush()  # Этот вызов обеспечит, что пользователь уже имеет присвоенный ID
+#
+#         # Теперь создаём продукт и указываем id только что созданного пользователя
+#         product = ProductModel(name="milk", user_id=user.id)
+#         session.add(product)
+
+
+session = Session(engine, expire_on_commit=True)
+Base = declarative_base()
+
+
+class AbstractModel(Base):
+    __abstract__ = True
+    id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
+
+
+class UserModel(AbstractModel):
+    __tablename__ = 'users'
+    name: Mapped[str] = mapped_column()
+    age: Mapped[int] = mapped_column()
+
+
+user = UserModel(name="Ilya", age=34)
+insp = inspect(user)
+
+print("is trensient?:", insp.transient)
+session.add(user)
+print("is pending?:", insp.pending)
+
