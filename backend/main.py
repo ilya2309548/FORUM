@@ -1,9 +1,14 @@
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session, declarative_base, Mapped, mapped_column
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import text, MetaData, Column, Table, Integer, String, ForeignKey, select, inspect
 from sql_app.database import engine
+from sql_app.schemas import UserCreate, User
+from sql_app.crud import  get_user, get_user_by_email, create_user
+from sql_app.database import Base
+
+# Base.metadata.create_all(bind=engine)
 
 # Подключаем уже созданный SessionLocal
 from sql_app.database import SessionLocal
@@ -18,28 +23,25 @@ def root():
 app = FastAPI()
 
 # Функция для получения сессии базы данных
-
-
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 # Эндпоинт для проверки подключения к базе данных
 
 
-# @app.get("/check_db_connection")
-# def check_db_connection(db: Session = Depends(get_db)):
-#     try:
-#         # Простой SQL-запрос для проверки подключения
-#         db.execute(text("SELECT 1"))
-#         return {"status": "Database connection is successful"}
-#     except OperationalError:
-#         return {"status": "Database connection failed"}
+@app.get("/check_db_connection")
+def check_db_connection(db: Session = Depends(get_db)):
+    try:
+        # Простой SQL-запрос для проверки подключения
+        db.execute(text("SELECT 1"))
+        return {"status": "Database connection is successful"}
+    except OperationalError:
+        return {"status": "Database connection failed"}
 
-#
 
 # with engine.connect() as connection:
 #     result = connection.execute(text("select now()"))
@@ -93,25 +95,18 @@ app = FastAPI()
 #         session.add(product)
 
 
-session = Session(engine, expire_on_commit=True)
-Base = declarative_base()
+@app.post("/users/")
+def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
+    return create_user(db=db, user=user)
+
+# @app.delete("/users/{user_id}")
+# def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
+#     return delete_user(db=db, user_id=user_id)
 
 
-class AbstractModel(Base):
-    __abstract__ = True
-    id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
-
-
-class UserModel(AbstractModel):
-    __tablename__ = 'users'
-    name: Mapped[str] = mapped_column()
-    age: Mapped[int] = mapped_column()
-
-
-user = UserModel(name="Ilya", age=34)
-insp = inspect(user)
-
-print("is trensient?:", insp.transient)
-session.add(user)
-print("is pending?:", insp.pending)
-
+@app.get("/users/{user_id}", response_model = User)
+def get_user_endpoint(user_id: int, db:Session=Depends(get_db)):
+    user = get_user(db=db, user_id=user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail = "user is not found")
+    return user
