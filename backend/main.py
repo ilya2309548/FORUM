@@ -92,25 +92,4 @@ app = FastAPI()
 #         session.add(product)
 
 
-session = Session(engine, expire_on_commit=True)
-Base = declarative_base()
-
-
-class AbstractModel(Base):
-    __abstract__ = True
-    id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
-
-
-class UserModel(AbstractModel):
-    __tablename__ = 'users'
-    name: Mapped[str] = mapped_column()
-    age: Mapped[int] = mapped_column()
-
-
-user = UserModel(name="Ilya", age=34)
-insp = inspect(user)
-
-print("is trensient?:", insp.transient)
-session.add(user)
-print("is pending?:", insp.pending)
 
