@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session, declarative_base, Mapped, mapped_column
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import text, MetaData, Column, Table, Integer, String, ForeignKey, select, inspect
 from sql_app.database import engine
-from sql_app.schemas import UserCreate, User
-from sql_app.crud import  get_user, get_user_by_email, create_user
+from sql_app.schemas import UserCreate, User, ItemCreate
+from sql_app.crud import  get_user, get_user_by_email, create_user, delete_user
+from sql_app.crud import create_item
 from sql_app.database import Base
 
 # Base.metadata.create_all(bind=engine)
@@ -95,13 +96,16 @@ def check_db_connection(db: Session = Depends(get_db)):
 #         session.add(product)
 
 
+# USERS ENDPOINT
+
+
 @app.post("/users/")
 def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
     return create_user(db=db, user=user)
 
-# @app.delete("/users/{user_id}")
-# def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
-#     return delete_user(db=db, user_id=user_id)
+@app.delete("/users/{user_id}")
+def delete_user_endpoint(user_id: int, db: Session = Depends(get_db)):
+    return delete_user(db=db, user_id=user_id)
 
 
 @app.get("/users/{user_id}", response_model = User)
@@ -111,4 +115,9 @@ def get_user_endpoint(user_id: int, db:Session=Depends(get_db)):
         raise HTTPException(status_code=404, detail = "user is not found")
     return user
 
-# test massege for develop/origin branch 
+
+# ITEMS ENDPOINT
+
+@app.post("/items/{user_id}")
+def create_item_endpoint(item: ItemCreate, user_id: int, db: Session=Depends(get_db)):
+    return create_item(db=db, item=item, user_id=user_id)
