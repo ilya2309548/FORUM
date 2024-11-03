@@ -1,20 +1,26 @@
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session, declarative_base, Mapped, mapped_column
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import text, MetaData, Column, Table, Integer, String, ForeignKey, select, inspect
 from sql_app.database import engine
-from sql_app.schemas import UserCreate, User, ItemCreate
-from sql_app.crud import  get_user, get_user_by_email, create_user, delete_user
+from sql_app.schemas import UserCreate, User, ItemCreate, Token
+from sql_app.crud import  get_user, create_user, delete_user
 from sql_app.crud import create_item
 from sql_app.database import Base
+from fastapi.security import OAuth2PasswordBearer
+from typing import Annotated
+from sql_app import models
+from datetime import timedelta
+from core.config import ACCESS_TOKEN_EXPIRE_MINUTES
+from core.security import create_access_token
+from sql_app.database import SessionLocal
 
-# Base.metadata.create_all(bind=engine)
 
 # Подключаем уже созданный SessionLocal
-from sql_app.database import SessionLocal
 app = FastAPI()
 
+Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def root():
@@ -121,3 +127,24 @@ def get_user_endpoint(user_id: int, db:Session=Depends(get_db)):
 @app.post("/items/{user_id}")
 def create_item_endpoint(item: ItemCreate, user_id: int, db: Session=Depends(get_db)):
     return create_item(db=db, item=item, user_id=user_id)
+
+
+
+
+@app.post("/register", response_model=Token)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.username == user.username).first()
+    if db_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+
+    new_user = create_user(db, user)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": new_user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
